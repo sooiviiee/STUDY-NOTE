@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>공부기록장</title>
+<meta name="description" content="뽀모도로 타이머와 학습 기록을 한 화면에서 관리하는 공부기록장">
+<meta name="theme-color" content="#2a78d6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="공부기록장">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%232a78d6'/%3E%3Ccircle cx='90' cy='96' r='46' fill='none' stroke='white' stroke-width='11'/%3E%3Cpath d='M90 70v28h20' stroke='white' stroke-width='11' stroke-linecap='round' fill='none'/%3E%3Crect x='68' y='30' width='44' height='12' rx='6' fill='white'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%232a78d6'/%3E%3Ccircle cx='90' cy='96' r='46' fill='none' stroke='white' stroke-width='11'/%3E%3Cpath d='M90 70v28h20' stroke='white' stroke-width='11' stroke-linecap='round' fill='none'/%3E%3Crect x='68' y='30' width='44' height='12' rx='6' fill='white'/%3E%3C/svg%3E">
+<style>
+  :root, .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --surface-2:      #ffffff;
+    --page:           #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --muted:          #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --series-study:   #2a78d6; /* blue */
+    --series-short:   #1baf7a; /* aqua */
+    --series-long:    #4a3aa7; /* violet */
+    --series-orange:  #eb6834;
+    --good:           #0ca30c;
+    --seq-100: #cde2fb; --seq-150:#b7d3f6; --seq-200:#9ec5f4; --seq-250:#86b6ef;
+    --seq-300: #6da7ec; --seq-350:#5598e7; --seq-400:#3987e5; --seq-450:#2a78d6;
+    --seq-500: #256abf; --seq-550:#1c5cab; --seq-600:#184f95; --seq-650:#104281; --seq-700:#0d366b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])),
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19; --surface-2:#212120; --page:#0d0d0d;
+      --text-primary:#ffffff; --text-secondary:#c3c2b7; --muted:#898781;
+      --gridline:#2c2c2a; --baseline:#383835; --border:rgba(255,255,255,0.10);
+      --series-study:#3987e5; --series-short:#199e70; --series-long:#9085e9; --series-orange:#d95926;
+      --good:#0ca30c;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  html { background: var(--page); }
+  .viz-root { background: var(--page); min-height:100vh; }
+  body {
+    background: var(--page);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 20px 60px; }
+
+  /* ---------- Header ---------- */
+  header.topbar {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 6px 4px 18px; gap:12px; flex-wrap: wrap;
+  }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .brand .dot { width:14px; height:14px; border-radius:50%; background:var(--series-study); }
+  .brand h1 { font-size:19px; margin:0; font-weight:700; letter-spacing:-0.01em; }
+  .brand .sub { font-size:12.5px; color:var(--muted); margin-top:1px; }
+  .top-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .btn {
+    appearance:none; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary);
+    font: inherit; font-size:13px; font-weight:600; padding:8px 13px; border-radius:9px; cursor:pointer;
+    display:inline-flex; align-items:center; gap:6px; transition: background .15s, border-color .15s;
+  }
+  .btn:hover { background: var(--surface-1); border-color: var(--muted); }
+  .btn.primary { background: var(--series-study); border-color: var(--series-study); color:#fff; }
+  .btn.primary:hover { filter: brightness(1.06); }
+  .btn.ghost { background: transparent; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .btn svg { width:14px; height:14px; }
+
+  /* ---------- Notice banner ---------- */
+  .notice {
+    background: var(--surface-2); border:1px solid var(--border); border-left:3px solid var(--series-orange);
+    border-radius:10px; padding:10px 14px; font-size:12.5px; color:var(--text-secondary); margin-bottom:18px;
+    display:flex; align-items:flex-start; gap:8px; line-height:1.55;
+  }
+  .notice b { color: var(--text-primary); }
+  .notice button.close { margin-left:auto; background:none; border:none; color:var(--muted); cursor:pointer; font-size:16px; line-height:1; padding:2px 4px; }
+
+  /* ---------- Main grid ---------- */
+  .main-grid { display:grid; grid-template-columns: 290px minmax(360px,1fr) 340px; gap:16px; align-items:start; }
+  /* Tablet (iPad portrait): timer on top, goals + timeline side by side */
+  @media (max-width: 1080px) and (min-width: 700px) {
+    .main-grid {
+      grid-template-columns: 1fr 1fr;
+      grid-template-areas: "timer timer" "goals timeline";
+    }
+    .panel-timer { grid-area: timer; }
+    .panel-goals { grid-area: goals; }
+    .panel-timeline { grid-area: timeline; }
+    .ring-wrap { width: 230px; height: 230px; }
+  }
+  @media (max-width: 699px) { .main-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 560px) {
+    .wrap { padding: 16px 14px 48px; }
+    .cal-stats { grid-template-columns: repeat(2, 1fr); }
+    .stat-tile .value { font-size:17px; }
+    .ring-wrap { width: 218px; height: 218px; }
+    .time-text { font-size:40px; }
+    .cal-cell { padding:4px 5px; border-radius:7px; }
+    .cal-cell .min-badge { font-size:9px; }
+  }
+  /* Comfortable touch targets on tablets & phones */
+  @media (pointer: coarse) {
+    .btn { padding:10px 15px; }
+    .controls .btn.big { padding:13px 26px; font-size:15px; }
+    .goal-item { padding:11px 6px; }
+    .goal-item input[type=checkbox] { width:20px; height:20px; }
+    .goal-item .del { opacity:.6; font-size:19px; padding:0 8px; }
+    .goal-add input, .field input, .field select { font-size:16px; } /* stops iOS auto-zoom */
+    .cal-nav button { width:36px; height:36px; }
+  }
+  /* Home-screen app: respect the iPad's safe area */
+  @supports (padding: max(0px)) {
+    .wrap { padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); padding-top: max(20px, env(safe-area-inset-top)); }
+  }
+
+  .panel {
+    background: var(--surface-1); border:1px solid var(--border); border-radius:16px; padding:18px;
+  }
+  .panel h2 { font-size:14.5px; margin:0 0 14px; font-weight:700; display:flex; align-items:center; justify-content:space-between; }
+  .panel h2 .count { font-size:12px; color:var(--muted); font-weight:600; }
+
+  /* ---------- Goals panel ---------- */
+  .goal-progress-bar { height:6px; border-radius:4px; background:var(--gridline); overflow:hidden; margin-bottom:14px; }
+  .goal-progress-fill { height:100%; background: var(--series-study); border-radius:4px; transition: width .25s ease; }
+  .goal-add { display:flex; gap:6px; margin-bottom:12px; }
+  .goal-add input {
+    flex:1; font: inherit; font-size:13px; padding:8px 10px; border-radius:8px; border:1px solid var(--border);
+    background: var(--surface-2); color:var(--text-primary);
+  }
+  .goal-add input:focus { outline:2px solid var(--series-study); outline-offset:1px; }
+  .goal-add button { border-radius:8px; }
+  .goal-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px; max-height:420px; overflow-y:auto; }
+  .goal-item { display:flex; align-items:flex-start; gap:9px; padding:8px 6px; border-radius:8px; }
+  .goal-item:hover { background: var(--surface-2); }
+  .goal-item input[type=checkbox] { margin-top:2px; width:16px; height:16px; accent-color: var(--series-study); cursor:pointer; flex-shrink:0; }
+  .goal-item .txt { font-size:13.5px; line-height:1.4; flex:1; word-break:break-word; }
+  .goal-item.done .txt { color: var(--muted); text-decoration: line-through; }
+  .goal-item .del { background:none; border:none; color:var(--muted); cursor:pointer; font-size:15px; padding:0 4px; opacity:0; transition:opacity .1s; }
+  .goal-item:hover .del { opacity:1; }
+  .empty-hint { color: var(--muted); font-size:12.5px; padding:10px 4px; text-align:center; }
+
+  /* ---------- Timer panel ---------- */
+  .timer-panel { display:flex; flex-direction:column; align-items:center; text-align:center; }
+  .settings-row { width:100%; display:flex; justify-content:flex-end; margin-bottom:6px; }
+  .mode-label {
+    font-size:12.5px; font-weight:700; padding:4px 12px; border-radius:20px; margin-bottom:16px;
+    letter-spacing:.02em;
+  }
+  .mode-label.study { background: color-mix(in srgb, var(--series-study) 16%, transparent); color: var(--series-study); }
+  .mode-label.short { background: color-mix(in srgb, var(--series-short) 16%, transparent); color: var(--series-short); }
+  .mode-label.long { background: color-mix(in srgb, var(--series-long) 16%, transparent); color: var(--series-long); }
+
+  .ring-wrap { position:relative; width:260px; height:260px; margin: 4px 0 18px; }
+  .ring-wrap svg { width:100%; height:100%; transform: rotate(-90deg); }
+  .ring-bg { fill:none; stroke:var(--gridline); stroke-width:12; }
+  .ring-fg { fill:none; stroke-width:12; stroke-linecap:round; transition: stroke-dashoffset .25s linear, stroke .25s; }
+  .ring-center { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .time-text { font-size:46px; font-weight:700; font-variant-numeric: tabular-nums; letter-spacing:-0.02em; }
+  .session-sub { font-size:12px; color:var(--muted); margin-top:4px; }
+
+  .cycle-dots { display:flex; gap:7px; margin-bottom:20px; }
+  .cycle-dots .dot { width:9px; height:9px; border-radius:50%; background: var(--gridline); transition: background .2s; }
+  .cycle-dots .dot.filled { background: var(--series-study); }
+
+  .controls { display:flex; gap:8px; }
+  .controls .btn.big { padding:10px 20px; font-size:14px; border-radius:11px; }
+
+  /* settings drawer */
+  .settings-drawer {
+    width:100%; max-width:420px; margin-top:18px; padding-top:16px; border-top:1px dashed var(--gridline);
+    display:none; text-align:left;
+  }
+  .settings-drawer.open { display:block; }
+  .settings-grid { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px; }
+  .field label { display:block; font-size:11.5px; color:var(--muted); font-weight:600; margin-bottom:5px; }
+  .field input[type=number] {
+    width:100%; font: inherit; font-size:14px; padding:7px 9px; border-radius:8px; border:1px solid var(--border);
+    background: var(--surface-2); color:var(--text-primary); font-variant-numeric: tabular-nums;
+  }
+  .field.full { grid-column: 1 / -1; }
+  .field select {
+    width:100%; font: inherit; font-size:14px; padding:7px 9px; border-radius:8px; border:1px solid var(--border);
+    background: var(--surface-2); color:var(--text-primary);
+  }
+  .field input[type=range] { width:100%; accent-color: var(--series-study); margin-top:8px; }
+  .drawer-section-title {
+    font-size:11.5px; font-weight:700; color:var(--muted); letter-spacing:.04em;
+    margin: 16px 0 10px; padding-top:14px; border-top:1px dashed var(--gridline);
+  }
+  .save-chip {
+    display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600;
+    color: var(--good); padding:6px 10px; border-radius:20px;
+    background: color-mix(in srgb, var(--good) 12%, transparent);
+  }
+  .save-chip svg { width:12px; height:12px; }
+  .save-chip.warn { color: var(--series-orange); background: color-mix(in srgb, var(--series-orange) 14%, transparent); }
+  .toggle-row { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-secondary); margin-bottom:12px; }
+  .toggle-row input { width:15px; height:15px; accent-color: var(--series-study); }
+
+  /* ---------- Timeline panel ---------- */
+  .timeline-list { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:10px; max-height:560px; overflow-y:auto; }
+  .tl-item { display:flex; gap:10px; padding:10px; border-radius:10px; background: var(--surface-2); border:1px solid var(--border); }
+  .tl-mark { width:8px; border-radius:4px; flex-shrink:0; }
+  .tl-mark.study { background: var(--series-study); }
+  .tl-mark.short { background: var(--series-short); }
+  .tl-mark.long { background: var(--series-long); }
+  .tl-body { flex:1; min-width:0; }
+  .tl-top { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:4px; }
+  .tl-type { font-size:12px; font-weight:700; }
+  .tl-time { font-size:11px; color:var(--muted); font-variant-numeric: tabular-nums; white-space:nowrap; }
+  .tl-note {
+    font-size:12.5px; color: var(--text-secondary); width:100%; border:none; background:transparent; font: inherit;
+    resize:none; padding:0; line-height:1.5; min-height:18px;
+  }
+  .tl-note:focus { outline:none; color: var(--text-primary); }
+  .tl-note::placeholder { color: var(--muted); font-style:italic; }
+
+  /* ---------- Calendar panel ---------- */
+  .cal-panel { margin-top:16px; }
+  .cal-stats { display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; margin-bottom:18px; }
+  .stat-tile { background: var(--surface-2); border:1px solid var(--border); border-radius:12px; padding:12px 14px; }
+  .stat-tile .label { font-size:11px; color:var(--muted); font-weight:600; margin-bottom:6px; }
+  .stat-tile .value { font-size:20px; font-weight:700; font-variant-numeric: tabular-nums; }
+  .cal-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .cal-head .month-label { font-size:15px; font-weight:700; }
+  .cal-nav { display:flex; gap:6px; }
+  .cal-nav button { width:30px; height:30px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-primary); cursor:pointer; font-size:14px; }
+  .cal-nav button:hover { background: var(--surface-1); }
+  .cal-grid { display:grid; grid-template-columns: repeat(7, 1fr); gap:6px; }
+  .cal-dow { text-align:center; font-size:11px; color:var(--muted); font-weight:700; padding-bottom:4px; }
+  .cal-cell {
+    aspect-ratio: 1/0.82; border-radius:9px; border:1px solid var(--border); background: var(--surface-2);
+    display:flex; flex-direction:column; justify-content:space-between; padding:6px 7px; cursor:default;
+    font-size:11px; position:relative; transition: transform .1s;
+  }
+  .cal-cell.has-data { cursor:pointer; }
+  .cal-cell.has-data:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+  .cal-cell.empty-slot { background:transparent; border-color:transparent; }
+  .cal-cell.today { box-shadow: inset 0 0 0 2px var(--series-orange); }
+  .cal-cell .day-num { font-weight:700; font-variant-numeric: tabular-nums; }
+  .cal-cell .min-badge { font-size:10px; font-weight:700; font-variant-numeric: tabular-nums; align-self:flex-end; }
+  .cal-legend { display:flex; align-items:center; gap:6px; margin-top:14px; font-size:11px; color:var(--muted); }
+  .cal-legend .sw { width:13px; height:13px; border-radius:3px; border:1px solid var(--border); }
+
+  .day-detail { margin-top:14px; padding:12px 14px; border-radius:10px; background: var(--surface-2); border:1px solid var(--border); font-size:12.5px; }
+  .day-detail .dd-head { font-weight:700; margin-bottom:8px; display:flex; justify-content:space-between; }
+  .day-detail .dd-head button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:14px; }
+  .day-detail ul { margin:0; padding-left:0; list-style:none; display:flex; flex-direction:column; gap:6px; }
+  .day-detail li { display:flex; gap:8px; color: var(--text-secondary); }
+  .day-detail .tag { font-weight:700; flex-shrink:0; width:64px; white-space:nowrap; }
+  .day-detail .tag.study { color: var(--series-study); }
+  .day-detail .tag.short { color: var(--series-short); }
+  .day-detail .tag.long { color: var(--series-long); }
+
+  /* toast */
+  .toast { position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--text-primary); color:var(--page);
+    padding:10px 18px; border-radius:10px; font-size:13px; font-weight:600; opacity:0; pointer-events:none; transition: all .25s ease; z-index:50; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .visually-hidden { position:absolute; width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap; }
+
+  /* ---------- Mascots ---------- */
+  .mascot { display:block; overflow:visible; }
+  /* plants sway from the base, like a breeze is passing */
+  .mascot-sway { animation: sway 4.2s ease-in-out infinite; transform-origin: 50% 92%; }
+  @keyframes sway {
+    0%, 100% { transform: rotate(-2.2deg); }
+    50%      { transform: rotate(2.2deg); }
+  }
+  .mascot .eyes { animation: blink 6.5s ease-in-out infinite; transform-origin: 50% 56%; transform-box: fill-box; }
+  @keyframes blink {
+    0%, 91%, 100% { transform: scaleY(1); }
+    94%           { transform: scaleY(0.08); }
+  }
+  .mascot-sleep .zzz { animation: floatZ 2.6s ease-in-out infinite; }
+  .mascot-sleep .zzz:nth-child(2) { animation-delay: .5s; }
+  @keyframes floatZ {
+    0%   { opacity:0; transform: translate(0,4px) scale(.7); }
+    35%  { opacity:.9; }
+    100% { opacity:0; transform: translate(5px,-12px) scale(1.1); }
+  }
+  .mascot-cheer { animation: cheerBounce .5s ease-in-out 4; transform-origin: 50% 90%; }
+  @keyframes cheerBounce {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    30%      { transform: translateY(-11px) rotate(-7deg); }
+    65%      { transform: translateY(0) rotate(6deg); }
+  }
+
+  .timer-mascot { width:88px; height:88px; margin-bottom:-2px; }
+
+  /* buddy row — one friend joins per completed pomodoro */
+  .buddy-row { display:flex; gap:9px; align-items:flex-end; margin-bottom:20px; min-height:40px; }
+  .buddy {
+    width:40px; height:40px; filter: grayscale(1); opacity:.34;
+    transition: filter .5s ease, opacity .5s ease, transform .5s cubic-bezier(.34,1.56,.64,1);
+  }
+  .buddy.earned { filter:none; opacity:1; transform: translateY(-3px); }
+  .buddy-hint { font-size:11.5px; color:var(--muted); margin: -12px 0 18px; }
+
+  /* goals encouragement strip */
+  .goal-cheer {
+    display:flex; align-items:center; gap:9px; margin-top:12px; padding:10px 11px;
+    background: var(--surface-2); border:1px solid var(--border); border-radius:11px;
+  }
+  .goal-cheer svg { width:34px; height:34px; flex-shrink:0; }
+  .goal-cheer .msg { font-size:12.5px; color: var(--text-secondary); line-height:1.45; }
+
+  /* empty states get a napping friend */
+  .empty-hint .mascot { width:52px; height:52px; margin:0 auto 6px; }
+
+  /* calendar day sticker */
+  .cal-cell .sticker { position:absolute; top:1px; right:1px; width:27px; height:27px; opacity:.97; pointer-events:none; }
+
+  /* celebration confetti */
+  .confetti-layer { position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden; }
+  .confetti {
+    position:absolute; font-size:19px; animation: confettiFall 2.4s ease-in forwards;
+  }
+  @keyframes confettiFall {
+    0%   { opacity:0; transform: translateY(0) rotate(0deg) scale(.6); }
+    12%  { opacity:1; }
+    100% { opacity:0; transform: translateY(88vh) rotate(var(--spin, 220deg)) scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mascot-sway, .mascot .eyes, .mascot-cheer, .mascot-sleep .zzz, .confetti {
+      animation: none !important;
+    }
+    .confetti { display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot" id="brandDot"></span>
+      <div>
+        <h1>공부기록장</h1>
+        <div class="sub" id="dateLabel">오늘 학습을 시작해 보세요</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <span class="save-chip" id="saveChip" title="이 기기에 자동으로 저장됩니다">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg>
+        <span id="saveChipText">자동 저장됨</span>
+      </span>
+      <button class="btn ghost" id="exportBtn" title="현재 데이터를 파일로 저장">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3a1 1 0 001 1h14a1 1 0 001-1v-3"/></svg>
+        내보내기
+      </button>
+      <button class="btn ghost" id="importBtn" title="저장해둔 파일 불러오기">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9m0 0l-4 4m4-4l4 4M4 7V4a1 1 0 011-1h14a1 1 0 011 1v3"/></svg>
+        불러오기
+      </button>
+      <input type="file" id="importFile" accept="application/json" class="visually-hidden">
+    </div>
+  </header>
+
+  <div class="notice" id="storageNotice" style="display:none;">
+    <span>ⓘ</span>
+    <div id="noticeText"></div>
+    <button class="close" id="noticeClose" aria-label="닫기">&times;</button>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- LEFT: Goals -->
+    <section class="panel panel-goals">
+      <h2>오늘의 목표 <span class="count" id="goalCount">0/0</span></h2>
+      <div class="goal-progress-bar"><div class="goal-progress-fill" id="goalProgressFill" style="width:0%"></div></div>
+      <div class="goal-add">
+        <input type="text" id="goalInput" placeholder="목표를 입력하고 Enter" maxlength="80">
+        <button class="btn primary" id="goalAddBtn">추가</button>
+      </div>
+      <ul class="goal-list" id="goalList"></ul>
+      <div class="goal-cheer" id="goalCheer"></div>
+    </section>
+
+    <!-- CENTER: Timer -->
+    <section class="panel timer-panel panel-timer">
+      <div class="settings-row">
+        <button class="btn ghost" id="settingsToggle" title="타이머 설정">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          설정
+        </button>
+      </div>
+
+      <div class="mode-label study" id="modeLabel">공부 시간</div>
+
+      <div class="ring-wrap">
+        <svg viewBox="0 0 260 260">
+          <circle class="ring-bg" cx="130" cy="130" r="118"></circle>
+          <circle class="ring-fg" id="ringFg" cx="130" cy="130" r="118" stroke="#2a78d6"></circle>
+        </svg>
+        <div class="ring-center">
+          <div class="timer-mascot" id="timerMascot"></div>
+          <div class="time-text" id="timeText">25:00</div>
+          <div class="session-sub" id="sessionSub">오늘 완료한 뽀모도로 0개</div>
+        </div>
+      </div>
+
+      <div class="buddy-row" id="cycleDots"></div>
+      <div class="buddy-hint" id="buddyHint"></div>
+
+      <div class="controls">
+        <button class="btn primary big" id="startPauseBtn">시작</button>
+        <button class="btn big" id="resetBtn" title="현재 세션 초기화">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 105.64 18.36L1 20M23 4l-4.64 4.36"/></svg>
+        </button>
+        <button class="btn big" id="skipBtn" title="다음 세션으로 건너뛰기">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4l10 8-10 8V4zM19 5v14"/></svg>
+        </button>
+      </div>
+
+      <div class="settings-drawer" id="settingsDrawer">
+        <div class="settings-grid">
+          <div class="field"><label>공부 시간 (분)</label><input type="number" id="cfgStudy" min="1" max="180"></div>
+          <div class="field"><label>짧은 휴식 (분)</label><input type="number" id="cfgShort" min="1" max="60"></div>
+          <div class="field"><label>긴 휴식 (분)</label><input type="number" id="cfgLong" min="1" max="90"></div>
+          <div class="field"><label>몇 번마다 긴 휴식?</label><input type="number" id="cfgCycles" min="2" max="12"></div>
+        </div>
+        <label class="toggle-row"><input type="checkbox" id="cfgAutoStart"> 세션이 끝나면 다음 세션 자동 시작</label>
+
+        <div class="drawer-section-title">알림음</div>
+        <label class="toggle-row"><input type="checkbox" id="cfgSoundOn"> 타이머가 끝나면 소리로 알리기</label>
+        <div class="settings-grid">
+          <div class="field">
+            <label>알림음 종류</label>
+            <select id="cfgSoundType">
+              <option value="bell">종소리</option>
+              <option value="chime">차임벨</option>
+              <option value="soft">부드러운 알림</option>
+              <option value="alarm">또렷한 알람</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>음량 <span id="volLabel" style="color:var(--text-secondary)">70%</span></label>
+            <input type="range" id="cfgVolume" min="0" max="100" step="5">
+          </div>
+          <div class="field full">
+            <button class="btn" id="soundTestBtn" style="width:100%; justify-content:center;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+              소리 미리 듣기
+            </button>
+          </div>
+        </div>
+        <label class="toggle-row"><input type="checkbox" id="cfgVibrate"> 진동으로도 알리기 (지원하는 기기만)</label>
+
+        <button class="btn primary" id="cfgSaveBtn" style="width:100%; justify-content:center;">설정 저장</button>
+        <button class="btn ghost" id="resetAllBtn" style="width:100%; justify-content:center; margin-top:8px; color:var(--muted);">저장된 기록 전체 삭제</button>
+      </div>
+    </section>
+
+    <!-- RIGHT: Timeline -->
+    <section class="panel panel-timeline">
+      <h2>오늘의 타임라인 <span class="count" id="tlCount">0건</span></h2>
+      <ul class="timeline-list" id="timelineList"></ul>
+    </section>
+
+  </div>
+
+  <!-- CALENDAR -->
+  <section class="panel cal-panel">
+    <h2>이번 달 학습 캘린더</h2>
+    <div class="cal-stats" id="calStats"></div>
+    <div class="cal-head">
+      <div class="cal-nav"><button id="calPrev">‹</button></div>
+      <div class="month-label" id="calMonthLabel">2026년 8월</div>
+      <div class="cal-nav"><button id="calNext">›</button></div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span>적음</span>
+      <span class="sw" style="background:var(--surface-2)"></span>
+      <span class="sw" style="background:var(--seq-100)"></span>
+      <span class="sw" style="background:var(--seq-200)"></span>
+      <span class="sw" style="background:var(--seq-350)"></span>
+      <span class="sw" style="background:var(--seq-500)"></span>
+      <span class="sw" style="background:var(--seq-650)"></span>
+      <span>많음</span>
+    </div>
+    <div class="day-detail" id="dayDetail" style="display:none;"></div>
+  </section>
+
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- State ---------------- */
+  const STORAGE_KEY = 'study-log-app-v1';
+
+  const state = {
+    settings: { study: 25, short: 5, long: 15, cycles: 4, autoStart: false,
+                soundOn: true, soundType: 'bell', volume: 70, vibrate: true },
+    goals: [],
+    goalsDate: null,
+    history: {}, // dateKey -> { sessions: [...], goals: [...] }
+    timer: {
+      mode: 'study',
+      sinceLongBreak: 0,
+      running: false,
+      duration: 25*60,
+      remaining: 25*60,
+      endAt: null,
+      intervalId: null,
+      sessionStart: null,
+    },
+    calendar: { year: null, month: null },
+    dayDetailKey: null,
+  };
+
+  const el = (id) => document.getElementById(id);
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function dateKey(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+  function todayKey(){ return dateKey(new Date()); }
+  function fmtTime(sec){ sec = Math.max(0,sec); const m = Math.floor(sec/60), s = sec%60; return pad(m)+':'+pad(s); }
+  function fmtClock(d){ return pad(d.getHours())+':'+pad(d.getMinutes()); }
+  function ensureDay(key){ if(!state.history[key]) state.history[key] = { sessions: [] }; return state.history[key]; }
+  function uid(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+
+  const MODE_META = {
+    study: { label:'공부 시간', tag:'공부', color:'var(--series-study)', hex:'#2a78d6' },
+    short: { label:'짧은 휴식', tag:'짧은 휴식', color:'var(--series-short)', hex:'#1baf7a' },
+    long:  { label:'긴 휴식',   tag:'긴 휴식', color:'var(--series-long)', hex:'#4a3aa7' },
+  };
+
+  const RING_R = 118, RING_C = 2*Math.PI*RING_R;
+
+  /* ---------------- Plant mascots ----------------
+     A little plant that grows as you study: seed → sprout → leaves →
+     bud → bloom. Drawn as inline SVG, with a tiny face on the head.
+     moods: focus | idle | rest | sleep | cheer                        */
+  const INK = '#3F3D3A';
+  const SOIL = '#D9CDB6', SOIL_DARK = '#C2B394';
+  const STEM = '#5FAF57', LEAF = '#7CC96B', LEAF_DARK = '#4E9C48';
+
+  // five bloom colours — the flower that opens depends on the day
+  const BLOOMS = [
+    { name:'벚꽃',   petal:'#F9BDCE', petalIn:'#F49CB6', center:'#F7D774' },
+    { name:'해바라기', petal:'#F8CE5C', petalIn:'#EEB63A', center:'#B9743C' },
+    { name:'코스모스', petal:'#F7A78F', petalIn:'#EE8B70', center:'#F6D277' },
+    { name:'라벤더',  petal:'#C6B2EC', petalIn:'#A992E0', center:'#F3DE9A' },
+    { name:'데이지',  petal:'#FAF6EC', petalIn:'#EDE5D2', center:'#F5C93F' },
+  ];
+  const STAGE_NAMES = ['씨앗','새싹','잎새','꽃봉오리','활짝 핀 꽃'];
+
+  /* ---- face parts (shared by every stage) ---- */
+  function eyesFor(mood, cx, cy){
+    const st = `stroke="${INK}" stroke-width="2.6" fill="none" stroke-linecap="round"`;
+    const lx = cx - 7.2, rx = cx + 7.2;
+    if(mood === 'rest' || mood === 'sleep'){
+      return `<g><path d="M${lx-4.4} ${cy} q4.4 4.6 8.8 0" ${st}/><path d="M${rx-4.4} ${cy} q4.4 4.6 8.8 0" ${st}/></g>`;
+    }
+    if(mood === 'cheer'){
+      return `<g><path d="M${lx-4.4} ${cy+1.6} q4.4 -5.6 8.8 0" ${st}/><path d="M${rx-4.4} ${cy+1.6} q4.4 -5.6 8.8 0" ${st}/></g>`;
+    }
+    return `<g class="eyes">
+      <ellipse cx="${lx}" cy="${cy}" rx="3.1" ry="4" fill="${INK}"/>
+      <ellipse cx="${rx}" cy="${cy}" rx="3.1" ry="4" fill="${INK}"/>
+      <circle cx="${lx+1.1}" cy="${cy-1.5}" r="1.15" fill="#fff"/>
+      <circle cx="${rx+1.1}" cy="${cy-1.5}" r="1.15" fill="#fff"/>
+    </g>`;
+  }
+  function mouthFor(mood, cx, cy){
+    const st = `stroke="${INK}" stroke-width="2" fill="none" stroke-linecap="round"`;
+    if(mood === 'cheer') return `<path d="M${cx-5} ${cy-1} q5 7.5 10 0 z" fill="#D2796F"/>`;
+    if(mood === 'sleep') return `<ellipse cx="${cx}" cy="${cy+0.5}" rx="2.6" ry="2.2" fill="#D2796F"/>`;
+    if(mood === 'rest')  return `<path d="M${cx-4.4} ${cy} q4.4 3.6 8.8 0" ${st}/>`;
+    return `<path d="M${cx-3.4} ${cy} q3.4 3 6.8 0" ${st}/>`;
+  }
+  function blushFor(cx, cy, spread, color){
+    return `<ellipse cx="${cx-spread}" cy="${cy}" rx="4.6" ry="3" fill="${color||'#F4A0A6'}" opacity=".55"/>
+            <ellipse cx="${cx+spread}" cy="${cy}" rx="4.6" ry="3" fill="${color||'#F4A0A6'}" opacity=".55"/>`;
+  }
+  function faceAt(mood, cx, cy, spread, blushColor){
+    return eyesFor(mood, cx, cy) + blushFor(cx, cy + 6, spread, blushColor) + mouthFor(mood, cx, cy + 8);
+  }
+
+  /* ---- reusable pieces ---- */
+  function soil(){
+    return `<ellipse cx="50" cy="90" rx="27" ry="6.5" fill="${SOIL}"/>
+            <ellipse cx="50" cy="88.4" rx="20" ry="4.4" fill="${SOIL_DARK}" opacity=".5"/>`;
+  }
+  function stem(topY){
+    return `<path d="M50 89 Q47.5 ${(89+topY)/2} 50 ${topY}" stroke="${STEM}" stroke-width="4.6"
+             fill="none" stroke-linecap="round"/>`;
+  }
+  function leafPair(y, size, droop){
+    const w = size, h = size * 0.62, d = droop || 0;
+    return `<path d="M50 ${y} C${50-w*0.55} ${y-h+d} ${50-w} ${y-h*0.15+d} ${50-w} ${y+h*0.42+d}
+                     C${50-w*0.5} ${y+h*0.5+d} ${50-w*0.12} ${y+h*0.16} 50 ${y} Z" fill="${LEAF}"/>
+            <path d="M50 ${y} C${50+w*0.55} ${y-h+d} ${50+w} ${y-h*0.15+d} ${50+w} ${y+h*0.42+d}
+                     C${50+w*0.5} ${y+h*0.5+d} ${50+w*0.12} ${y+h*0.16} 50 ${y} Z" fill="${LEAF_DARK}"/>`;
+  }
+  function petals(cx, cy, r, bloom, open){
+    // 6 petals around the centre; `open` scales them for the bud→bloom step
+    let out = '';
+    const k = open == null ? 1 : open;
+    for(let i=0;i<6;i++){
+      const ang = (i * 60) - 90;
+      out += `<ellipse cx="${cx}" cy="${cy - r*k}" rx="${8.6*k}" ry="${11*k}"
+               fill="${i % 2 ? bloom.petalIn : bloom.petal}"
+               transform="rotate(${ang} ${cx} ${cy})"/>`;
+    }
+    return out;
+  }
+
+  /* ---- the five growth stages ---- */
+  function plantStageSVG(stage, mood, bloom){
+    switch(stage){
+      case 0: // 씨앗 — a shoot is just breaking through
+        return soil() +
+          `<path d="M50 56 q1 -8 7 -11 q-1.5 8 -5 12 Z" fill="${LEAF}"/>
+           <path d="M50 58 q-3 -5 -8 -6 q2 5.5 6.5 8 Z" fill="${LEAF_DARK}"/>
+           <ellipse cx="50" cy="72" rx="16" ry="17.5" fill="#DBBB92"/>
+           <ellipse cx="50" cy="72" rx="16" ry="17.5" fill="none" stroke="#BE9868" stroke-width="1.6"/>
+           <path d="M41 60.5 q9 6 18 0" stroke="#BE9868" stroke-width="1.5" fill="none" stroke-linecap="round" opacity=".8"/>` +
+          faceAt(mood, 50, 72, 10.5, '#E0A288');
+
+      case 1: // 새싹 — two little leaves
+        return soil() + stem(63) + leafPair(62, 19) +
+          `<circle cx="50" cy="52" r="12.5" fill="#BEE3A8"/>
+           <path d="M50 40.5 q2.5 -7 8 -8 q-1.5 5.5 -6 8.5 Z" fill="${LEAF_DARK}"/>` +
+          faceAt(mood, 50, 51, 8.5);
+
+      case 2: // 잎새 — taller, more leaves
+        return soil() + stem(46) + leafPair(70, 20) + leafPair(56, 17, -1) +
+          `<circle cx="50" cy="37" r="14" fill="#B2DE9C"/>` +
+          faceAt(mood, 50, 36, 9.5);
+
+      case 3: // 꽃봉오리 — petals still wrapped, sepals cupping the base
+        return soil() + stem(46) + leafPair(70, 21) + leafPair(56, 17, -1) +
+          `<path d="M50 13 C61 23 65.5 32 65.5 40 C65.5 50 58.5 57 50 57
+                    C41.5 57 34.5 50 34.5 40 C34.5 32 39 23 50 13 Z" fill="${bloom.petal}"/>
+           <path d="M50 13 C56 23 58.5 32 58.5 40 C58.5 50 55 57 50 57
+                    C45 57 41.5 50 41.5 40 C41.5 32 44 23 50 13 Z" fill="${bloom.petalIn}" opacity=".55"/>
+           <path d="M35.5 47 q14.5 9 29 0 q-2.5 13 -14.5 13 q-12 0 -14.5 -13 Z" fill="${LEAF_DARK}"/>
+           <path d="M35.5 47 q14.5 9 29 0 q-1.5 6.5 -5 9.5 q-9.5 3 -19 0 q-3.5 -3 -5 -9.5 Z" fill="${LEAF}" opacity=".8"/>` +
+          faceAt(mood, 50, 33, 8);
+
+      default: // 4 — 활짝 핀 꽃
+        return soil() + stem(46) + leafPair(72, 21) + leafPair(58, 18, -1) +
+          petals(50, 34, 13, bloom, 1) +
+          `<circle cx="50" cy="34" r="13" fill="${bloom.center}"/>` +
+          faceAt(mood, 50, 33.5, 8.5);
+    }
+  }
+
+  function mascotSVG(stage, mood, opts){
+    opts = opts || {};
+    const s = Math.max(0, Math.min(4, stage|0));
+    const bloom = BLOOMS[((opts.bloom == null ? s : opts.bloom) % BLOOMS.length + BLOOMS.length) % BLOOMS.length];
+    const cls = ['mascot'];
+    if(opts.className) cls.push(opts.className);
+    if(mood === 'cheer') cls.push('mascot-cheer');
+    else if(opts.animate !== false) cls.push('mascot-sway');
+    if(mood === 'sleep') cls.push('mascot-sleep');
+
+    const zzz = (mood === 'sleep')
+      ? `<g fill="${INK}" opacity=".5" font-family="system-ui, sans-serif" font-weight="700">
+           <text class="zzz" x="72" y="34" font-size="12">z</text>
+           <text class="zzz" x="80" y="24" font-size="9">z</text>
+         </g>` : '';
+    const sparkle = (mood === 'cheer')
+      ? `<g fill="#F5C242">
+           <path d="M15 40 l2.2 4.6 4.6 2.2 -4.6 2.2 -2.2 4.6 -2.2 -4.6 -4.6 -2.2 4.6 -2.2 Z"/>
+           <path d="M84 30 l1.7 3.6 3.6 1.7 -3.6 1.7 -1.7 3.6 -1.7 -3.6 -3.6 -1.7 3.6 -1.7 Z"/>
+         </g>` : '';
+    // a watering sparkle while you are actually focused
+    const dew = (mood === 'focus')
+      ? `<circle cx="22" cy="52" r="2.6" fill="#8CC7EF" opacity=".75"/>
+         <circle cx="79" cy="60" r="2" fill="#8CC7EF" opacity=".6"/>` : '';
+
+    return `<svg class="${cls.join(' ')}" viewBox="0 0 100 100" width="100%" height="100%"
+             role="img" aria-label="${STAGE_NAMES[s]}">
+      ${plantStageSVG(s, mood, bloom)}${dew}${zzz}${sparkle}
+    </svg>`;
+  }
+
+  function moodForMode(mode){
+    if(mode === 'study') return state.timer.running ? 'focus' : 'idle';
+    if(mode === 'short') return 'rest';
+    return 'sleep';
+  }
+  function studyDoneToday(){
+    const d = state.history[todayKey()];
+    return d ? d.sessions.filter(s=>s.type==='study').length : 0;
+  }
+  // the plant grows across the cycle and blooms exactly at the long break
+  function currentStage(){
+    const c = Math.max(1, state.settings.cycles);
+    return Math.max(0, Math.min(4, Math.round(state.timer.sinceLongBreak / c * 4)));
+  }
+  // which flower today is growing
+  function todayBloom(){
+    const k = todayKey();
+    let h = 0;
+    for(let i=0;i<k.length;i++) h = (h*31 + k.charCodeAt(i)) % 9973;
+    return h % BLOOMS.length;
+  }
+
+
+  /* ---------------- Celebration ---------------- */
+  function celebrate(){
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const layer = document.createElement('div');
+    layer.className = 'confetti-layer';
+    const bits = ['🌸','🌱','✨','🌿','🍀','🌼'];
+    for(let i=0;i<16;i++){
+      const s = document.createElement('span');
+      s.className = 'confetti';
+      s.textContent = bits[i % bits.length];
+      s.style.left = (5 + Math.random()*90) + '%';
+      s.style.top = (-6 - Math.random()*12) + '%';
+      s.style.animationDelay = (Math.random()*0.5) + 's';
+      s.style.setProperty('--spin', (140 + Math.random()*260) + 'deg');
+      layer.appendChild(s);
+    }
+    document.body.appendChild(layer);
+    setTimeout(()=>layer.remove(), 3200);
+  }
+
+  /* ---------------- Persistence ---------------- */
+  let storageOK = true;
+  function storageAvailable(){
+    try{
+      const k = '__probe__'+Date.now();
+      window.localStorage.setItem(k,'1');
+      window.localStorage.removeItem(k);
+      return true;
+    }catch(e){ return false; }
+  }
+  let saveTimer = null, bootSave = true;
+  function save(){
+    if(!storageOK) return;
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=>{
+      try{
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          version: 1,
+          savedAt: new Date().toISOString(),
+          settings: state.settings,
+          goals: state.goals,
+          goalsDate: state.goalsDate,
+          history: state.history,
+        }));
+        if(!bootSave) flashSaved();
+        bootSave = false;
+      }catch(e){
+        storageOK = false;
+        showStorageWarning('저장 공간이 가득 찼어요. 내보내기로 기록을 백업한 뒤 오래된 기록을 정리해 주세요.');
+      }
+    }, 300);
+  }
+  function load(){
+    if(!storageOK) return;
+    let raw = null;
+    try{ raw = window.localStorage.getItem(STORAGE_KEY); }catch(e){ return; }
+    if(!raw) return;
+    try{
+      const data = JSON.parse(raw);
+      if(data.settings) Object.assign(state.settings, data.settings);
+      if(Array.isArray(data.goals)) state.goals = data.goals;
+      if(data.goalsDate) state.goalsDate = data.goalsDate;
+      if(data.history && typeof data.history === 'object') state.history = data.history;
+    }catch(e){ /* corrupted — start fresh */ }
+  }
+  let savedFlashTimer = null;
+  function flashSaved(){
+    const chip = el('saveChip');
+    if(!chip) return;
+    chip.style.opacity = '0.45';
+    clearTimeout(savedFlashTimer);
+    savedFlashTimer = setTimeout(()=>{ chip.style.opacity = '1'; }, 220);
+  }
+  function showStorageWarning(msg){
+    const box = el('storageNotice');
+    el('noticeText').innerHTML = msg;
+    box.style.display = 'flex';
+    const chip = el('saveChip');
+    chip.classList.add('warn');
+    el('saveChipText').textContent = '자동 저장 안 됨';
+  }
+
+  /* ---------------- Toast ---------------- */
+  let toastTimer = null;
+  function toast(msg){
+    const t = el('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), 2600);
+  }
+
+  /* ---------------- Audio alert ----------------
+     iPad/iPhone Safari only allows sound that was unlocked during a real
+     tap, so we create and resume the AudioContext on the first user
+     interaction and keep it alive for later timer completions. */
+  let audioCtx = null;
+  function unlockAudio(){
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return;
+      if(!audioCtx) audioCtx = new AC();
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+      // a silent blip keeps iOS from re-suspending the context
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      gain.gain.value = 0.0001;
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 0.01);
+    }catch(e){ /* audio not available */ }
+  }
+  ['pointerdown','touchstart','keydown'].forEach(evt=>{
+    document.addEventListener(evt, unlockAudio, { passive:true });
+  });
+
+  // Each preset is a list of tones: [startOffset, frequency, duration, type]
+  const SOUND_PRESETS = {
+    bell:  { tones: [[0,880,1.5,'sine'],[0,1320,1.2,'sine'],[0.9,880,1.4,'sine'],[0.9,1320,1.1,'sine']], decay:'long' },
+    chime: { tones: [[0,523.25,0.7,'sine'],[0.18,659.25,0.7,'sine'],[0.36,783.99,0.9,'sine'],[0.54,1046.5,1.3,'sine']], decay:'long' },
+    soft:  { tones: [[0,440,0.55,'sine'],[0.28,554.37,0.75,'sine']], decay:'long' },
+    alarm: { tones: [[0,880,0.16,'square'],[0.24,880,0.16,'square'],[0.48,880,0.16,'square'],[0.8,1046.5,0.3,'square']], decay:'short' },
+  };
+
+  function playSound(name, volumePct){
+    if(!audioCtx){ unlockAudio(); }
+    if(!audioCtx) return;
+    try{
+      if(audioCtx.state === 'suspended') audioCtx.resume();
+      const preset = SOUND_PRESETS[name] || SOUND_PRESETS.bell;
+      const vol = Math.max(0, Math.min(1, (volumePct==null?70:volumePct)/100)) * 0.5;
+      if(vol <= 0) return;
+      const now = audioCtx.currentTime + 0.02;
+      preset.tones.forEach(([off, freq, dur, type])=>{
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type || 'sine';
+        osc.frequency.setValueAtTime(freq, now + off);
+        const peak = Math.max(0.0002, vol);
+        gain.gain.setValueAtTime(0.0001, now + off);
+        gain.gain.exponentialRampToValueAtTime(peak, now + off + 0.012);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + off + dur);
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start(now + off);
+        osc.stop(now + off + dur + 0.05);
+      });
+    }catch(e){ /* ignore */ }
+  }
+
+  function notifyEnd(){
+    if(state.settings.soundOn) playSound(state.settings.soundType, state.settings.volume);
+    if(state.settings.vibrate && navigator.vibrate){
+      try{ navigator.vibrate([250,120,250]); }catch(e){}
+    }
+  }
+
+  /* ---------------- Goals ---------------- */
+  function renderGoals(){
+    const list = el('goalList');
+    list.innerHTML = '';
+    if(state.goals.length===0){
+      list.innerHTML = '<div class="empty-hint" style="padding:4px">오늘의 목표를 추가해보세요</div>';
+    }
+    state.goals.forEach(g=>{
+      const li = document.createElement('li');
+      li.className = 'goal-item'+(g.done?' done':'');
+      li.innerHTML = `
+        <input type="checkbox" ${g.done?'checked':''} aria-label="목표 완료">
+        <div class="txt"></div>
+        <button class="del" aria-label="삭제">&times;</button>`;
+      li.querySelector('.txt').textContent = g.text;
+      li.querySelector('input').addEventListener('change', (e)=>{ g.done = e.target.checked; renderGoals(); save(); });
+      li.querySelector('.del').addEventListener('click', ()=>{ state.goals = state.goals.filter(x=>x.id!==g.id); renderGoals(); save(); });
+      list.appendChild(li);
+    });
+    const done = state.goals.filter(g=>g.done).length;
+    const total = state.goals.length;
+    el('goalCount').textContent = done+'/'+total;
+    el('goalProgressFill').style.width = total ? (done/total*100)+'%' : '0%';
+
+    // encouragement strip with a friend whose mood tracks your progress
+    // the goal plant grows as you tick things off
+    let mood = 'idle', msg, stage;
+    if(total === 0){
+      mood = 'rest'; stage = 0; msg = '오늘 뭐부터 해볼까요?';
+    } else if(done === total){
+      mood = 'cheer'; stage = 4; msg = '오늘 목표 전부 완료! 활짝 폈어요 🌸';
+    } else if(done === 0){
+      mood = 'idle'; stage = 0; msg = '첫 목표부터 하나씩 해봐요. 여기서 기다릴게요';
+    } else {
+      mood = 'idle';
+      stage = Math.max(1, Math.min(3, Math.round(done/total*4)));
+      msg = done+'개 완료! '+(total-done)+'개 남았어요. 조금씩 자라는 중';
+    }
+    const cheer = el('goalCheer');
+    cheer.innerHTML = mascotSVG(stage, mood, { animate: mood !== 'cheer', bloom: todayBloom() }) +
+      '<div class="msg">'+msg+'</div>';
+  }
+  function addGoal(){
+    const input = el('goalInput');
+    const text = input.value.trim();
+    if(!text) return;
+    state.goals.push({ id: uid(), text, done:false });
+    input.value = '';
+    renderGoals();
+    save();
+  }
+  el('goalAddBtn').addEventListener('click', addGoal);
+  el('goalInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') addGoal(); });
+
+  /* ---------------- Timeline ---------------- */
+  function renderTimeline(){
+    const key = todayKey();
+    const day = state.history[key];
+    const sessions = day ? day.sessions.slice().reverse() : [];
+    const list = el('timelineList');
+    list.innerHTML = '';
+    el('tlCount').textContent = sessions.length+'건';
+    if(sessions.length===0){
+      list.innerHTML = '<div class="empty-hint">'+mascotSVG(0,'sleep')+'타이머를 완료하면 여기에 기록돼요</div>';
+      return;
+    }
+    sessions.forEach(s=>{
+      const meta = MODE_META[s.type];
+      const li = document.createElement('li');
+      li.className = 'tl-item';
+      const start = new Date(s.start), end = new Date(s.end);
+      li.innerHTML = `
+        <div class="tl-mark ${s.type}"></div>
+        <div class="tl-body">
+          <div class="tl-top">
+            <span class="tl-type" style="color:${meta.hex}">${meta.tag} · ${s.minutes}분</span>
+            <span class="tl-time">${fmtClock(start)}–${fmtClock(end)}</span>
+          </div>
+          <textarea class="tl-note" rows="1" placeholder="${s.type==='study' ? '무엇을 공부했나요?' : '메모 (선택)'}"></textarea>
+        </div>`;
+      const ta = li.querySelector('.tl-note');
+      ta.value = s.note || '';
+      autoGrow(ta);
+      ta.addEventListener('input', ()=>{ s.note = ta.value; autoGrow(ta); save(); });
+      list.appendChild(li);
+    });
+  }
+  function autoGrow(ta){ ta.style.height='auto'; ta.style.height = ta.scrollHeight+'px'; }
+
+  /* ---------------- Timer engine ---------------- */
+  function updateModeUI(){
+    const meta = MODE_META[state.timer.mode];
+    const label = el('modeLabel');
+    label.textContent = meta.label;
+    label.className = 'mode-label '+state.timer.mode;
+    el('ringFg').setAttribute('stroke', meta.hex);
+    document.getElementById('brandDot').style.background = meta.hex;
+    renderTimerMascot();
+  }
+  let cheerUntil = 0, cheerTimer = null;
+  function renderTimerMascot(mood){
+    const box = el('timerMascot');
+    if(!box) return;
+    // let a celebration finish before the next mode's face takes over
+    if(!mood && Date.now() < cheerUntil) return;
+    if(mood === 'cheer'){
+      cheerUntil = Date.now() + 2400;
+      clearTimeout(cheerTimer);
+      cheerTimer = setTimeout(()=>{ cheerUntil = 0; renderTimerMascot(); }, 2450);
+    }
+    box.innerHTML = mascotSVG(currentStage(), mood || moodForMode(state.timer.mode), { bloom: todayBloom() });
+  }
+  function renderCycleDots(){
+    const wrap = el('cycleDots');
+    wrap.innerHTML = '';
+    const c = state.settings.cycles;
+    const earned = state.timer.sinceLongBreak;
+    for(let i=0;i<c;i++){
+      const d = document.createElement('div');
+      d.className = 'buddy'+(i < earned ? ' earned':'');
+      // each finished pomodoro plants a flower in the row; the rest are seeds
+      d.innerHTML = i < earned
+        ? mascotSVG(4, 'rest', { animate:false, bloom: todayBloom() + i })
+        : mascotSVG(0, 'rest', { animate:false });
+      wrap.appendChild(d);
+    }
+    const left = Math.max(0, c - earned);
+    el('buddyHint').textContent = left === 0
+      ? '꽃이 활짝 폈어요! 긴 휴식 시간이에요 🌸'
+      : '뽀모도로 '+left+'번 더 하면 꽃이 활짝 펴요';
+  }
+  function renderTimeUI(){
+    el('timeText').textContent = fmtTime(state.timer.remaining);
+    const frac = state.timer.duration>0 ? state.timer.remaining/state.timer.duration : 0;
+    const offset = RING_C * (1-frac);
+    const ring = el('ringFg');
+    ring.setAttribute('stroke-dasharray', RING_C);
+    ring.setAttribute('stroke-dashoffset', offset);
+    const key = todayKey();
+    const count = state.history[key] ? state.history[key].sessions.filter(s=>s.type==='study').length : 0;
+    el('sessionSub').textContent = '오늘 완료한 뽀모도로 '+count+'개';
+    document.title = (state.timer.running ? fmtTime(state.timer.remaining)+' · ' : '') + '공부기록장';
+  }
+  function setDuration(mode){
+    const mins = mode==='study'? state.settings.study : mode==='short'? state.settings.short : state.settings.long;
+    state.timer.duration = mins*60;
+    state.timer.remaining = mins*60;
+  }
+  function switchMode(mode, opts){
+    opts = opts || {};
+    state.timer.mode = mode;
+    setDuration(mode);
+    updateModeUI(); renderCycleDots(); renderTimeUI();
+    if(opts.autoStart){ startTimer(); } else { el('startPauseBtn').textContent = '시작'; }
+  }
+
+  /* Keep the screen awake while a session runs, so tablets don't sleep
+     and silence the alarm. Silently ignored where unsupported. */
+  let wakeLock = null;
+  async function requestWakeLock(){
+    try{
+      if('wakeLock' in navigator && !wakeLock){
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', ()=>{ wakeLock = null; });
+      }
+    }catch(e){ wakeLock = null; }
+  }
+  function releaseWakeLock(){
+    try{ if(wakeLock){ wakeLock.release(); wakeLock = null; } }catch(e){}
+  }
+
+  function startTimer(){
+    if(state.timer.running) return;
+    unlockAudio();
+    requestWakeLock();
+    state.timer.running = true;
+    state.timer.endAt = Date.now() + state.timer.remaining*1000;
+    if(!state.timer.sessionStart) state.timer.sessionStart = new Date(Date.now() - (state.timer.duration - state.timer.remaining)*1000);
+    el('startPauseBtn').textContent = '일시정지';
+    renderTimerMascot();
+    state.timer.intervalId = setInterval(tick, 250);
+  }
+  function pauseTimer(){
+    if(!state.timer.running) return;
+    state.timer.running = false;
+    clearInterval(state.timer.intervalId);
+    releaseWakeLock();
+    el('startPauseBtn').textContent = '계속하기';
+    renderTimeUI();
+  }
+  function resetTimer(){
+    pauseTimer();
+    setDuration(state.timer.mode);
+    state.timer.sessionStart = null;
+    el('startPauseBtn').textContent = '시작';
+    renderTimeUI();
+  }
+  function skipTimer(){
+    pauseTimer();
+    state.timer.sessionStart = null;
+    advanceToNext(false);
+  }
+  function tick(){
+    const remaining = Math.round((state.timer.endAt - Date.now())/1000);
+    state.timer.remaining = Math.max(0, remaining);
+    renderTimeUI();
+    if(remaining<=0){
+      clearInterval(state.timer.intervalId);
+      state.timer.running = false;
+      releaseWakeLock();
+      completeSession();
+    }
+  }
+  function completeSession(){
+    const mode = state.timer.mode;
+    const start = state.timer.sessionStart || new Date(Date.now() - state.timer.duration*1000);
+    const end = new Date();
+    const minutes = Math.round(state.timer.duration/60);
+    const key = dateKey(end);
+    const day = ensureDay(key);
+    day.sessions.push({ id: uid(), type: mode, start: start.toISOString(), end: end.toISOString(), minutes, note:'' });
+    state.timer.sessionStart = null;
+    notifyEnd();
+    renderTimerMascot('cheer');
+    if(mode === 'study') celebrate();
+    toast(mode==='study' ? '공부 세션 완료! 무엇을 배웠는지 적어보세요.' : '휴식 완료. 다시 시작해볼까요?');
+    renderTimeline();
+    renderCalendar();
+    save();
+    advanceToNext(true);
+  }
+  function advanceToNext(wasCompleted){
+    const mode = state.timer.mode;
+    if(mode==='study'){
+      if(wasCompleted) state.timer.sinceLongBreak += 1;
+      const nextMode = state.timer.sinceLongBreak >= state.settings.cycles ? 'long' : 'short';
+      switchMode(nextMode, { autoStart: state.settings.autoStart });
+    } else {
+      if(mode==='long') state.timer.sinceLongBreak = 0;
+      switchMode('study', { autoStart: state.settings.autoStart });
+    }
+  }
+
+  el('startPauseBtn').addEventListener('click', ()=>{
+    if(state.timer.running) pauseTimer(); else startTimer();
+  });
+  el('resetBtn').addEventListener('click', resetTimer);
+  el('skipBtn').addEventListener('click', skipTimer);
+
+  /* ---------------- Settings drawer ---------------- */
+  function fillSettingsForm(){
+    el('cfgStudy').value = state.settings.study;
+    el('cfgShort').value = state.settings.short;
+    el('cfgLong').value = state.settings.long;
+    el('cfgCycles').value = state.settings.cycles;
+    el('cfgAutoStart').checked = state.settings.autoStart;
+    el('cfgSoundOn').checked = state.settings.soundOn;
+    el('cfgSoundType').value = state.settings.soundType;
+    el('cfgVolume').value = state.settings.volume;
+    el('cfgVibrate').checked = state.settings.vibrate;
+    el('volLabel').textContent = state.settings.volume + '%';
+  }
+  el('settingsToggle').addEventListener('click', ()=>{
+    el('settingsDrawer').classList.toggle('open');
+    fillSettingsForm();
+  });
+  el('cfgVolume').addEventListener('input', ()=>{
+    el('volLabel').textContent = el('cfgVolume').value + '%';
+  });
+  el('soundTestBtn').addEventListener('click', ()=>{
+    playSound(el('cfgSoundType').value, parseInt(el('cfgVolume').value,10));
+    if(el('cfgVibrate').checked && navigator.vibrate){ try{ navigator.vibrate(200); }catch(e){} }
+  });
+  el('cfgSoundType').addEventListener('change', ()=>{
+    playSound(el('cfgSoundType').value, parseInt(el('cfgVolume').value,10));
+  });
+  el('cfgSaveBtn').addEventListener('click', ()=>{
+    const s = state.settings;
+    s.study = clampInt(el('cfgStudy').value, 1, 180, s.study);
+    s.short = clampInt(el('cfgShort').value, 1, 60, s.short);
+    s.long = clampInt(el('cfgLong').value, 1, 90, s.long);
+    s.cycles = clampInt(el('cfgCycles').value, 2, 12, s.cycles);
+    s.autoStart = el('cfgAutoStart').checked;
+    s.soundOn = el('cfgSoundOn').checked;
+    s.soundType = el('cfgSoundType').value;
+    s.volume = clampInt(el('cfgVolume').value, 0, 100, s.volume);
+    s.vibrate = el('cfgVibrate').checked;
+    if(!state.timer.running){
+      setDuration(state.timer.mode);
+      renderTimeUI();
+    }
+    renderCycleDots();
+    el('settingsDrawer').classList.remove('open');
+    save();
+    toast('설정을 저장했어요.');
+  });
+  el('resetAllBtn').addEventListener('click', ()=>{
+    const ok = window.confirm('저장된 목표와 학습 기록이 모두 삭제됩니다. 계속할까요?\n(내보내기로 백업해 두셨다면 나중에 불러오기로 되살릴 수 있어요.)');
+    if(!ok) return;
+    state.goals = [];
+    state.history = {};
+    state.goalsDate = todayKey();
+    state.dayDetailKey = null;
+    el('dayDetail').style.display = 'none';
+    try{ window.localStorage.removeItem(STORAGE_KEY); }catch(e){}
+    renderGoals(); renderTimeline(); renderCalendar(); renderTimeUI();
+    el('settingsDrawer').classList.remove('open');
+    save();
+    toast('기록을 모두 삭제했어요.');
+  });
+  function clampInt(v,min,max,fallback){
+    const n = parseInt(v,10);
+    if(isNaN(n)) return fallback;
+    return Math.min(max, Math.max(min, n));
+  }
+
+  /* ---------------- Calendar ---------------- */
+  const DOW = ['일','월','화','수','목','금','토'];
+  function renderCalendar(){
+    const {year, month} = state.calendar; // month: 0-11
+    el('calMonthLabel').textContent = year+'년 '+(month+1)+'월';
+    const grid = el('calGrid');
+    grid.innerHTML = '';
+    DOW.forEach(d=>{ const h = document.createElement('div'); h.className='cal-dow'; h.textContent=d; grid.appendChild(h); });
+
+    const firstDay = new Date(year, month, 1);
+    const startOffset = firstDay.getDay();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    const tKey = todayKey();
+
+    let monthMinutes = 0, monthPomodoros = 0, activeDays = 0, streak = 0, maxStreak = 0;
+    const dayMinutesArr = [];
+
+    for(let i=0;i<startOffset;i++){
+      const spacer = document.createElement('div');
+      spacer.className = 'cal-cell empty-slot';
+      grid.appendChild(spacer);
+    }
+    for(let d=1; d<=daysInMonth; d++){
+      const dt = new Date(year, month, d);
+      const key = dateKey(dt);
+      const day = state.history[key];
+      const studyMinutes = day ? day.sessions.filter(s=>s.type==='study').reduce((a,s)=>a+s.minutes,0) : 0;
+      const pomCount = day ? day.sessions.filter(s=>s.type==='study').length : 0;
+      dayMinutesArr.push(studyMinutes);
+      monthMinutes += studyMinutes; monthPomodoros += pomCount;
+      if(studyMinutes>0){ activeDays++; streak++; maxStreak = Math.max(maxStreak, streak); } else { streak = 0; }
+
+      const cell = document.createElement('div');
+      cell.className = 'cal-cell'+(studyMinutes>0?' has-data':'')+(key===tKey?' today':'');
+      const bucket = seqBucket(studyMinutes);
+      cell.style.background = bucket.bg;
+      const numColor = bucket.num;
+      const badgeColor = bucket.badge;
+      // the plant on each day reflects how much grew that day
+      let stickerStage = -1;
+      if(studyMinutes >= 150) stickerStage = 4;
+      else if(studyMinutes >= 90) stickerStage = 3;
+      else if(studyMinutes >= 50) stickerStage = 2;
+      else if(studyMinutes >= 25) stickerStage = 1;
+      const sticker = stickerStage >= 0
+        ? `<span class="sticker">${mascotSVG(stickerStage, 'rest', { animate:false, bloom: d })}</span>`
+        : '';
+      cell.innerHTML = `<span class="day-num" style="color:${numColor}">${d}</span>${sticker}`+
+        (studyMinutes>0 ? `<span class="min-badge" style="color:${badgeColor}">${studyMinutes}분</span>` : '');
+      if(studyMinutes>0){
+        cell.addEventListener('click', ()=> showDayDetail(key));
+      }
+      grid.appendChild(cell);
+    }
+
+    const stats = el('calStats');
+    const h = Math.floor(monthMinutes/60), m = monthMinutes%60;
+    stats.innerHTML = '';
+    addStat(stats, '이번 달 학습 시간', h+'시간 '+m+'분');
+    addStat(stats, '완료한 뽀모도로', monthPomodoros+'개');
+    addStat(stats, '학습한 날', activeDays+'일');
+    addStat(stats, '최장 연속 기록', maxStreak+'일');
+
+    if(state.dayDetailKey && !state.history[state.dayDetailKey]){
+      el('dayDetail').style.display = 'none';
+      state.dayDetailKey = null;
+    } else if(state.dayDetailKey){
+      showDayDetail(state.dayDetailKey);
+    }
+  }
+  function addStat(container, label, value){
+    const t = document.createElement('div');
+    t.className = 'stat-tile';
+    t.innerHTML = `<div class="label"></div><div class="value"></div>`;
+    t.querySelector('.label').textContent = label;
+    t.querySelector('.value').textContent = value;
+    container.appendChild(t);
+  }
+  /* The heatmap ramp is the same set of blues in light and dark mode, so the
+     ink on a filled cell must follow the CELL colour, not the theme —
+     otherwise light-mode ink lands on a dark cell (and vice versa). */
+  function seqBucket(min){
+    const onLight = { num:'#0b0b0b', badge:'#16324f' };
+    const onDark  = { num:'#ffffff', badge:'rgba(255,255,255,.88)' };
+    if(min<=0)  return { bg:'var(--surface-2)', num:'var(--text-primary)', badge:'var(--text-secondary)' };
+    if(min<30)  return Object.assign({ bg:'var(--seq-100)' }, onLight);
+    if(min<60)  return Object.assign({ bg:'var(--seq-200)' }, onLight);
+    if(min<120) return Object.assign({ bg:'var(--seq-350)' }, onLight);
+    if(min<180) return Object.assign({ bg:'var(--seq-500)' }, onDark);
+    return Object.assign({ bg:'var(--seq-650)' }, onDark);
+  }
+  function showDayDetail(key){
+    state.dayDetailKey = key;
+    const day = state.history[key];
+    const box = el('dayDetail');
+    if(!day || day.sessions.length===0){ box.style.display='none'; return; }
+    const d = new Date(key+'T00:00:00');
+    const label = (d.getMonth()+1)+'월 '+d.getDate()+'일 기록';
+    const items = day.sessions.slice().sort((a,b)=> new Date(a.start)-new Date(b.start)).map(s=>{
+      const meta = MODE_META[s.type];
+      const start = new Date(s.start);
+      const note = s.note ? ' — '+escapeHtml(s.note) : '';
+      return `<li><span class="tag ${s.type}">${meta.tag}</span><span>${fmtClock(start)} · ${s.minutes}분${note}</span></li>`;
+    }).join('');
+    let goalBlock = '';
+    if(Array.isArray(day.goals) && day.goals.length){
+      const gi = day.goals.map(g=>`<li><span class="tag">${g.done?'✓ 완료':'· 미완료'}</span><span>${escapeHtml(g.text)}</span></li>`).join('');
+      goalBlock = `<div style="margin-top:10px; padding-top:10px; border-top:1px dashed var(--gridline);"><div style="font-weight:700; margin-bottom:6px;">그날의 목표</div><ul>${gi}</ul></div>`;
+    }
+    box.innerHTML = `<div class="dd-head"><span>${label}</span><button aria-label="닫기">&times;</button></div><ul>${items}</ul>${goalBlock}`;
+    box.querySelector('button').addEventListener('click', ()=>{ box.style.display='none'; state.dayDetailKey=null; });
+    box.style.display = 'block';
+  }
+  function escapeHtml(str){
+    const d = document.createElement('div'); d.textContent = str; return d.innerHTML;
+  }
+  el('calPrev').addEventListener('click', ()=>{
+    state.calendar.month -= 1;
+    if(state.calendar.month<0){ state.calendar.month=11; state.calendar.year -=1; }
+    renderCalendar();
+  });
+  el('calNext').addEventListener('click', ()=>{
+    state.calendar.month += 1;
+    if(state.calendar.month>11){ state.calendar.month=0; state.calendar.year +=1; }
+    renderCalendar();
+  });
+
+  /* ---------------- Export / Import ---------------- */
+  el('exportBtn').addEventListener('click', ()=>{
+    const payload = { version:1, exportedAt: new Date().toISOString(), settings: state.settings, goals: state.goals, goalsDate: state.goalsDate, history: state.history };
+    const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = '공부기록장-'+todayKey()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    toast('데이터를 파일로 저장했어요.');
+  });
+  el('importBtn').addEventListener('click', ()=> el('importFile').click());
+  el('importFile').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try{
+        const data = JSON.parse(reader.result);
+        if(data.settings) Object.assign(state.settings, data.settings);
+        if(Array.isArray(data.goals)){
+          const existingIds = new Set(state.goals.map(g=>g.id));
+          data.goals.forEach(g=>{ if(!existingIds.has(g.id)) state.goals.push(g); });
+        }
+        if(data.history){
+          Object.keys(data.history).forEach(key=>{
+            const incoming = data.history[key];
+            const current = ensureDay(key);
+            const existingIds = new Set(current.sessions.map(s=>s.id));
+            (incoming.sessions||[]).forEach(s=>{ if(!existingIds.has(s.id)) current.sessions.push(s); });
+          });
+        }
+        renderGoals(); renderTimeline(); renderCalendar(); renderTimeUI();
+        save();
+        toast('데이터를 불러왔어요.');
+      }catch(err){
+        toast('파일을 읽을 수 없어요. JSON 형식을 확인해주세요.');
+      }
+      el('importFile').value = '';
+    };
+    reader.readAsText(file);
+  });
+
+  el('noticeClose').addEventListener('click', ()=>{ el('storageNotice').remove(); });
+
+  /* ---------------- Daily rollover ---------------- */
+  function rolloverGoals(){
+    const today = todayKey();
+    if(!state.goalsDate){ state.goalsDate = today; return; }
+    if(state.goalsDate === today) return;
+    // archive yesterday's list into that day's record, carry unfinished ones forward
+    if(state.goals.length){
+      const prev = ensureDay(state.goalsDate);
+      prev.goals = state.goals.map(g=>({ text:g.text, done:!!g.done }));
+      const unfinished = state.goals.filter(g=>!g.done);
+      state.goals = unfinished.map(g=>({ id: uid(), text: g.text, done:false }));
+      if(unfinished.length){
+        setTimeout(()=>toast('어제 끝내지 못한 목표 '+unfinished.length+'개를 오늘로 옮겼어요.'), 700);
+      }
+    }
+    state.goalsDate = today;
+  }
+
+  /* ---------------- Background / wake handling ---------------- */
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState === 'visible'){
+      if(state.timer.running){ tick(); requestWakeLock(); }
+      if(state.goalsDate && state.goalsDate !== todayKey()){
+        rolloverGoals(); renderGoals(); renderTimeline(); renderCalendar(); save();
+      }
+    }
+  });
+  window.addEventListener('pagehide', ()=>{ clearTimeout(saveTimer); });
+
+  /* ---------------- Init ---------------- */
+  function init(){
+    storageOK = storageAvailable();
+    load();
+    if(!storageOK){
+      showStorageWarning('<b>이 브라우저에서는 자동 저장이 꺼져 있어요.</b> (사파리 시크릿 모드이거나 저장이 차단된 환경) 하루를 마칠 때 <b>내보내기</b>로 파일을 저장해두고, 다음에 <b>불러오기</b>로 이어서 기록해 주세요.');
+    }
+    rolloverGoals();
+    // restore how far into the cycle today already is, so the friends
+    // you earned before closing the page are still there
+    const todayDone = state.history[todayKey()]
+      ? state.history[todayKey()].sessions.filter(s=>s.type==='study').length : 0;
+    state.timer.sinceLongBreak = state.settings.cycles > 0 ? todayDone % state.settings.cycles : 0;
+    const now = new Date();
+    state.calendar.year = now.getFullYear();
+    state.calendar.month = now.getMonth();
+    el('dateLabel').textContent = now.getFullYear()+'년 '+(now.getMonth()+1)+'월 '+now.getDate()+'일 · 좋은 하루 되세요';
+    setDuration('study');
+    updateModeUI();
+    renderCycleDots();
+    renderTimeUI();
+    renderGoals();
+    renderTimeline();
+    renderCalendar();
+    save();
+  }
+  init();
+})();
+</script>
+</body>
+</html>
